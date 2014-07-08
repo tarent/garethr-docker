@@ -122,4 +122,12 @@ class docker::install {
         }
     }
   }
+
+  file {'/usr/local/bin/check-for-docker-image':
+    ensure => file,
+    source => "puppet:///modules/docker/check-for-docker-image.sh",
+    owner  => "root",
+    group  => "root",
+    mode   => 755,
+  }
 }
