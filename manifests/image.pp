@@ -84,6 +84,7 @@ define docker::image(
     $image_arg     = "${image}:${image_tag}"
     $image_remove  = "${docker_command} rmi ${image_force}${image}:${image_tag}"
     $image_find    = "${docker_command} images | egrep '^(docker.io/)?${image} ' | awk '{ print \$2 }' | grep ^${image_tag}$"
+    $image_find_special = "/usr/local/bin/check-for-docker-image ${image} ${image_tag}"
   } elsif $image_digest {
     $image_arg     = "${image}@${image_digest}"
     $image_remove  = "${docker_command} rmi ${image_force}${image}:${image_digest}"
@@ -101,7 +102,7 @@ define docker::image(
   } elsif $docker_tar {
     $image_install = "${docker_command} load -i ${docker_tar}"
   } else {
-    $image_install = "/usr/local/bin/update_docker_image.sh ${image_arg}"
+    $image_install = "${docker_command} pull ${image_arg}"
   }
 
   if $ensure == 'absent' {
@@ -117,6 +118,7 @@ define docker::image(
       timeout     => 0,
       onlyif      => $image_install,
       require     => File['/usr/local/bin/update_docker_image.sh'],
+      unless      => $image_find_special,
     }
   } elsif $ensure == 'present' {
     exec { $image_install:
