@@ -32,6 +32,8 @@ class docker::params {
   $manage_package               = true
   $manage_kernel                = true
   $manage_epel                  = true
+  $use_docker_create            = false
+  $docker_create_directory      = undef
   $package_name_default         = 'lxc-docker'
   $service_name_default         = 'docker'
   $docker_command_default       = 'docker'

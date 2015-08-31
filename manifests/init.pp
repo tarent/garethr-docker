@@ -146,6 +146,16 @@
 # [*repo_opt*]
 #   Specify a string to pass as repository options (RedHat only)
 #
+# [*use_docker_create*]
+#   Specify if an external script for the creation of the docker image should be
+#   used
+#   Default to false
+#
+# [*$docker_create_directory*]
+#   Specify the directory for the external create script when use_docker_create
+#   is used
+#   Defaults to undefined
+
 class docker(
   $version                     = $docker::params::version,
   $ensure                      = $docker::params::ensure,
@@ -187,6 +197,8 @@ class docker(
   $docker_users                = [],
   $repo_opt                    = $docker::params::repo_opt,
   $nowarn_kernel               = $docker::params::nowarn_kernel,
+  $use_docker_create           = $docker::params::use_docker_create,
+  $docker_create_directory     = $docker::params::docker_create_directory,
 ) inherits docker::params {
 
   validate_string($version)

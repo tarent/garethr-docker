@@ -75,6 +75,9 @@ define docker::run(
   $docker_command = $docker::params::docker_command
   $service_name = $docker::params::service_name
 
+  $use_docker_create = $docker::use_docker_create
+  $docker_create_directory = $docker::docker_create_directory
+
   validate_re($image, '^[\S]*$')
   validate_re($title, '^[\S]*$')
   validate_re($memory_limit, '^[\d]*(b|k|m|g)$')
@@ -99,10 +102,10 @@ define docker::run(
   validate_bool($tty)
 
   if $detach == undef {
-    $valid_detach = $docker::params::detach_service_in_init
+    $valid_detach = $docker::params::detach_service_in_init and !$use_docker_create
   } else {
     validate_bool($detach)
-    $valid_detach = $detach
+    $valid_detach = $detach and !$use_docker_create
   }
 
   $depends_array = any2array($depends)
@@ -169,11 +172,11 @@ define docker::run(
           $mode           = '0755'
           $uses_systemd   = false
         } else {
-          $initscript     = "/etc/systemd/system/${service_prefix}${sanitised_title}.service"
-          $init_template  = 'docker/etc/systemd/system/docker-run.erb'
-          $hasstatus      = true
-          $mode           = '0644'
-          $uses_systemd   = true
+          $initscript       = "/etc/systemd/system/${service_prefix}${sanitised_title}.service"
+          $init_template    = 'docker/etc/systemd/system/docker-run.erb'
+          $hasstatus        = true
+          $mode             = '0644'
+          $uses_systemd     = true
         }
       }
       'Archlinux': {
@@ -188,10 +191,26 @@ define docker::run(
       }
     }
 
+    if $use_docker_create {
+      $createscript     = "${docker_create_directory}/${service_prefix}${sanitised_title}-create.sh"
+      $create_template  = "docker/create/create-docker.erb"
+    }
+
     file { $initscript:
       ensure  => present,
       content => template($init_template),
       mode    => $mode,
+    }
+
+    if $use_docker_create {
+      file { $createscript:
+        ensure  => present,
+        content => template($create_template),
+        mode    => '0700',
+        require => File[$docker_create_directory],
+      }
+
+      File[$createscript] -> File[$initscript]
     }
 
     if $manage_service {
