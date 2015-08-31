@@ -1,0 +1,9 @@
+#!/bin/bash
+# This file is managed by Puppet and local changes
+# may be overwritten
+
+/usr/bin/<%= @docker_command %> create \
+        <%= @docker_run_flags %> \
+        --name <%= @sanitised_title %> \
+        <%= @image %> \
+        <% if @command %> <%= @command %><% end %>
