@@ -94,7 +94,6 @@ stop() {
         <%= @before_stop %>
     <% end -%>
     $docker stop <%= @sanitised_title %>
-    $docker rm <%= @sanitised_title %>
     return $?
 }
 
@@ -105,7 +104,7 @@ clean() {
         printf "$cidfile does not exist.\n"
     else
         cid="$(cat $cidfile)"
-	rm $cidfile
+        rm $cidfile
         $docker rm -f $cid
         retval=$?
         return $retval
