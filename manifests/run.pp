@@ -211,6 +211,11 @@ define docker::run(
       }
 
       File[$createscript] -> File[$initscript]
+
+      if $restart_service {
+        File[$createscript] ~> Service<| title == "${service_prefix}${sanitised_title}" |>
+      }
+
     }
 
     if $manage_service {
