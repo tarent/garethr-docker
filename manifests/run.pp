@@ -161,8 +161,16 @@ define docker::run(
         $init_template = 'docker/etc/init.d/docker-run.erb'
         $deprecated_initscript = "/etc/init/${service_prefix}${sanitised_title}.conf"
         $hasstatus  = true
-        $uses_systemd = false
         $mode = '0755'
+
+        case $::lsbdistcodename {
+          'jessie': {
+            $uses_systemd = true
+          }
+          default: {
+            $uses_systemd = false
+          }
+        }
       }
       'RedHat': {
         if ($::operatingsystem == 'Amazon') or (versioncmp($::operatingsystemrelease, '7.0') < 0) {
