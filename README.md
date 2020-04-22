@@ -15,6 +15,7 @@ This module is currently tested on:
 
 * Ubuntu 12.04
 * Ubuntu 14.04
+* Ubuntu 18.04
 * Centos 7.0
 * Centos 6.6
 
