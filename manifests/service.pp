@@ -22,26 +22,27 @@
 #   Array of shell values to pass into init script config files
 #
 class docker::service (
-  $docker_command   = $docker::docker_command,
-  $service_name     = $docker::service_name,
-  $tcp_bind         = $docker::tcp_bind,
-  $socket_bind      = $docker::socket_bind,
-  $log_level        = $docker::log_level,
-  $selinux_enabled  = $docker::selinux_enabled,
-  $socket_group     = $docker::socket_group,
-  $dns              = $docker::dns,
-  $dns_search       = $docker::dns_search,
-  $service_state    = $docker::service_state,
-  $service_enable   = $docker::service_enable,
-  $root_dir         = $docker::root_dir,
-  $extra_parameters = $docker::extra_parameters,
-  $shell_values     = $docker::shell_values,
-  $proxy            = $docker::proxy,
-  $no_proxy         = $docker::no_proxy,
-  $execdriver       = $docker::execdriver,
-  $storage_driver   = $docker::storage_driver,
-  $tmp_dir          = $docker::tmp_dir,
-  $nowarn_kernel    = $docker::nowarn_kernel,
+  $docker_command     = $docker::docker_command,
+  $service_name       = $docker::service_name,
+  $tcp_bind           = $docker::tcp_bind,
+  $socket_bind        = $docker::socket_bind,
+  $log_level          = $docker::log_level,
+  $selinux_enabled    = $docker::selinux_enabled,
+  $socket_group       = $docker::socket_group,
+  $dns                = $docker::dns,
+  $dns_search         = $docker::dns_search,
+  $service_state      = $docker::service_state,
+  $service_enable     = $docker::service_enable,
+  $root_dir           = $docker::root_dir,
+  $insecure_registry  = $docker::insecure_registry,
+  $extra_parameters   = $docker::extra_parameters,
+  $shell_values       = $docker::shell_values,
+  $proxy              = $docker::proxy,
+  $no_proxy           = $docker::no_proxy,
+  $execdriver         = $docker::execdriver,
+  $storage_driver     = $docker::storage_driver,
+  $tmp_dir            = $docker::tmp_dir,
+  $nowarn_kernel      = $docker::nowarn_kernel,
 ) {
   $dns_array = any2array($dns)
   $dns_search_array = any2array($dns_search)
@@ -57,21 +58,41 @@ class docker::service (
         'Debian': {
           # Do nothing as Debian doesn't have Upstart
         }
-        default: {
-          file { '/etc/init.d/docker':
-              ensure => 'link',
-              target => '/lib/init/upstart-job',
-              force  => true,
-              notify => Service['docker'],
+        'Ubuntu': {
+          case $::operatingsystemmajrelease {
+            '18.04': {
+              # Ubuntu 18.04 uses systemd
+              file { "/etc/docker/daemon.json":
+                ensure  => present,
+                force   => true,
+                content => template('docker/etc/default/daemon.json.erb'),
+                notify  => Service['docker'],
+              }
+
+              file { '/etc/init.d/docker':
+                ensure => absent,
+                force  => true,
+                notify => Service['docker'],
+              }
+            }
+
+            default: {
+              file { '/etc/init.d/docker':
+                ensure => 'link',
+                target => '/lib/init/upstart-job',
+                force  => true,
+                notify => Service['docker'],
+              }
+
+              file { "/etc/default/${service_name}":
+                ensure  => present,
+                force   => true,
+                content => template('docker/etc/default/docker.erb'),
+                notify  => Service['docker'],
+              }
+            }
           }
         }
-      }
-
-      file { "/etc/default/${service_name}":
-        ensure  => present,
-        force   => true,
-        content => template('docker/etc/default/docker.erb'),
-        notify  => Service['docker'],
       }
     }
     'RedHat': {
@@ -122,9 +143,16 @@ class docker::service (
     }
   }
 
-  $provider = $::operatingsystem ? {
-    'Ubuntu' => 'upstart',
-    default  => undef,
+  case $::operatingsystem {
+    'Ubuntu': {
+      $provider = $::operatingsystemmajrelease ? {
+        '18.04' => 'systemd',
+        default  => 'upstart',
+      }
+    }
+    default: {
+      $provider = undef
+    }
   }
 
   service { 'docker':

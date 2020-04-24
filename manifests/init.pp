@@ -76,6 +76,14 @@
 #   Any extra parameters that should be passed to the docker daemon.
 #   Defaults to undefined
 #
+# [*insecure_registry*]
+#   An insecure docker registry that should be passed to the docker daemon.
+#   Defaults to undefined
+#
+# [*without_installation*]
+#   Tells the docker module that the user itself manages the installation of docker.
+#   Defaults to false
+#
 # [*shell_values*]
 #   Array of shell values to pass into init script config files
 #
@@ -175,6 +183,8 @@ class docker(
   $dns_search                  = $docker::params::dns_search,
   $socket_group                = $docker::params::socket_group,
   $extra_parameters            = undef,
+  $insecure_registry           = undef,
+  $without_installation        = false,
   $shell_values                = undef,
   $proxy                       = $docker::params::proxy,
   $no_proxy                    = $docker::params::no_proxy,
@@ -231,10 +241,18 @@ class docker(
     fail('You need to provide both $dm_datadev and $dm_metadatadev parameters for direct lvm.')
   }
 
-  class { 'docker::install': } ->
-  class { 'docker::config': } ~>
-  class { 'docker::service': }
-  contain 'docker::install'
+  if !$without_installation {
+    class { 'docker::install': } ->
+    class { 'docker::config': } ~>
+    class { 'docker::service': }
+  } else {
+    class { 'docker::config': } ~>
+    class { 'docker::service': }
+  }
+
+  if !$without_installation {
+    contain 'docker::install'
+  }
   contain 'docker::config'
   contain 'docker::service'
 

@@ -1,0 +1,12 @@
+{
+    "storage-driver": "overlay2",
+    <% if @insecure_registry %>
+    "insecure-registries": [
+        "<%= @insecure_registry %>"
+    ],
+    <% end -%>
+    "log-opts": {
+        "max-size": "50m",
+        "max-file": "3"
+    }
+}
